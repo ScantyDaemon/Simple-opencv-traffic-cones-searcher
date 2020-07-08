@@ -4,6 +4,7 @@ from matplotlib import pyplot as plt
 def empty(a):
     pass
 
+cap = cv2.VideoCapture('cones2.mp4')
 
 
 path = 'cones2.jpg'
@@ -39,10 +40,9 @@ def stackImages(scale,imgArray):
         ver = hor
     return ver
 
-imgContour = cv2.imread(path)
-
+img = cv2.imread(path)
+imgContour = img.copy()
 def getContours(img):
-    imgContour = img.copy()
     contours,hierarchy = cv2.findContours(img,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
     for cnt in contours:
         area = cv2.contourArea(cnt)
@@ -55,7 +55,6 @@ def getContours(img):
             print(len(approx))
             objCor = len(approx)
             x, y, w, h = cv2.boundingRect(approx)
- 
             if objCor ==3: objectType ="Tri"
             elif objCor == 4:
                 aspRatio = w/float(h)
@@ -63,9 +62,6 @@ def getContours(img):
                 else:objectType="Rectangle"
             elif objCor>4: objectType= "Circles"
             else:objectType="None"
- 
- 
- 
             cv2.rectangle(imgContour,(x,y),(x+w,y+h),(0,255,0),2)
             cv2.putText(imgContour,objectType,
                         (x+(w//2)-10,y+(h//2)-10),cv2.FONT_HERSHEY_COMPLEX,0.7,
@@ -74,8 +70,8 @@ def getContours(img):
 
 
 
- 
- 
+
+
 
 #cv2.namedWindow("TrackBars")
 #cv2.resizeWindow("TrackBars",640,240)
@@ -89,7 +85,7 @@ def getContours(img):
 #
 plt.rcParams['figure.figsize'] = 10, 10
 
-img = cv2.imread(path)
+
 img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 img_HSV = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2HSV)
 #lower = np.array([0,68,5])
@@ -103,17 +99,44 @@ img_thresh_low = cv2.inRange(img_HSV, np.array([0, 68, 5]), np.array([15, 255, 2
 img_thresh_high = cv2.inRange(img_HSV, np.array([159, 135, 135]), np.array([255, 255, 255])) #всё что входит в "правый красный"
 
 img_thresh = cv2.bitwise_or(img_thresh_low, img_thresh_high)
+plt.imshow(img_thresh)
+plt.show()
 f, axarr = plt.subplots(nrows=1, ncols=2)
 axarr[0].imshow(img_thresh_low)
 axarr[1].imshow(img_thresh_high)
-plt.imshow(img_thresh)
-plt.show()
-kernel = np.ones((5, 5))
-img_thresh_opened = cv2.morphologyEx(img_thresh, cv2.MORPH_OPEN, kernel)
-img_thresh_blurred = cv2.medianBlur(img_thresh_opened, 5)
 
-getContours(img_thresh)
-cv2.imshow('result',img_thresh)
+kernel = np.ones((5, 5))
+img_thresh_opened = cv2.morphologyEx(img_thresh_low, cv2.MORPH_OPEN, kernel)
+img_thresh_blurred = cv2.medianBlur(img_thresh_opened, 5)
+imgCanny = cv2.Canny(img_thresh_blurred, 80, 160)
+
+#imgContour = imgCanny.copy()
+
+
+
+# params for ShiTomasi corner detection
+feature_params = dict( maxCorners = 100,
+                       qualityLevel = 0.3,
+                       minDistance = 7,
+                       blockSize = 7 )
+# Parameters for lucas kanade optical flow
+lk_params = dict( winSize  = (15,15),
+                  maxLevel = 2,
+                  criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
+# Create some random colors
+color = np.random.randint(0,255,(100,3))
+# Take first frame and find corners in it
+ret, old_frame = cap.read()
+old_gray = cv2.cvtColor(old_frame, cv2.COLOR_BGR2GRAY)
+p0 = cv2.goodFeaturesToTrack(old_gray, mask = None, **feature_params)
+# Create a mask image for drawing purposes
+mask = np.zeros_like(old_frame)
+while(1):
+    ret,frame = cap.read()
+    frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+getContours(imgCanny)
+cv2.imshow('result',imgContour)
 
 
 
@@ -150,9 +173,9 @@ cv2.imshow('result',img_thresh)
  
 #imgGray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
 #imgBlur = cv2.GaussianBlur(imgGray,(7,7),1)
-imgCanny = cv2.Canny(img_thresh, 80, 160)
+
 #imgCanny = cv2.Canny(imgBlur,50,50)
-getContours(imgCanny)
+#getContours(imgCanny)
  
 imgBlank = np.zeros_like(img)
 #imgStack = stackImager(0.8,([imgclear],[imgContour]))
@@ -160,27 +183,7 @@ imgBlank = np.zeros_like(img)
 
 
 
-cap = cv2.VideoCapture('cones.mp4')
-# params for ShiTomasi corner detection
-feature_params = dict( maxCorners = 100,
-                       qualityLevel = 0.3,
-                       minDistance = 7,
-                       blockSize = 7 )
-# Parameters for lucas kanade optical flow
-lk_params = dict( winSize  = (15,15),
-                  maxLevel = 2,
-                  criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
-# Create some random colors
-color = np.random.randint(0,255,(100,3))
-# Take first frame and find corners in it
-ret, old_frame = cap.read()
-old_gray = cv2.cvtColor(old_frame, cv2.COLOR_BGR2GRAY)
-p0 = cv2.goodFeaturesToTrack(old_gray, mask = None, **feature_params)
-# Create a mask image for drawing purposes
-mask = np.zeros_like(old_frame)
-##while(1):
-    ##ret,frame = cap.read()
-    ##frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
     # calculate optical flow
     #p1, st, err = cv2.calcOpticalFlowPyrLK(old_gray, frame_gray, p0, None, **lk_params)
     # Select good points
@@ -203,7 +206,7 @@ mask = np.zeros_like(old_frame)
 
 
 
-cv2.imshow("canny", imgCanny)
+
 
 cv2.waitKey(0) 
 #####################
