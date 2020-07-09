@@ -4,10 +4,8 @@ from matplotlib import pyplot as plt
 def empty(a):
     pass
 
-cap = cv2.VideoCapture('cones2.mp4')
 
 
-path = 'cones2.jpg'
 
 def stackImages(scale,imgArray):
     rows = len(imgArray)
@@ -40,32 +38,32 @@ def stackImages(scale,imgArray):
         ver = hor
     return ver
 
-img = cv2.imread(path)
-imgContour = img.copy()
-def getContours(img):
-    contours,hierarchy = cv2.findContours(img,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
-    for cnt in contours:
-        area = cv2.contourArea(cnt)
-        print(area)
-        if area>500:
-            cv2.drawContours(imgContour, cnt, -1, (255, 0, 0), 3)
-            peri = cv2.arcLength(cnt,True)
-            #print(peri)
-            approx = cv2.approxPolyDP(cnt,0.02*peri,True)
-            print(len(approx))
-            objCor = len(approx)
-            x, y, w, h = cv2.boundingRect(approx)
-            if objCor ==3: objectType ="Tri"
-            elif objCor == 4:
-                aspRatio = w/float(h)
-                if aspRatio >0.98 and aspRatio <1.03: objectType= "Square"
-                else:objectType="Rectangle"
-            elif objCor>4: objectType= "Circles"
-            else:objectType="None"
-            cv2.rectangle(imgContour,(x,y),(x+w,y+h),(0,255,0),2)
-            cv2.putText(imgContour,objectType,
-                        (x+(w//2)-10,y+(h//2)-10),cv2.FONT_HERSHEY_COMPLEX,0.7,
-                        (0,0,0),2)
+#img = cv2.imread(path)
+#imgContour = img.copy()
+#def getContours(img):
+#    contours,hierarchy = cv2.findContours(img,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
+#    for cnt in contours:
+#        area = cv2.contourArea(cnt)
+#        print(area)
+#        if area>500:
+#            cv2.drawContours(imgContour, cnt, -1, (255, 0, 0), 3)
+#            peri = cv2.arcLength(cnt,True)
+#            #print(peri)
+#            approx = cv2.approxPolyDP(cnt,0.02*peri,True)
+#            print(len(approx))
+#            objCor = len(approx)
+#            x, y, w, h = cv2.boundingRect(approx)
+#            if objCor ==3: objectType ="Tri"
+#            elif objCor == 4:
+#                aspRatio = w/float(h)
+#                if aspRatio >0.98 and aspRatio <1.03: objectType= "Square"
+#                else:objectType="Rectangle"
+#            elif objCor>4: objectType= "Circles"
+#            else:objectType="None"
+#            cv2.rectangle(imgContour,(x,y),(x+w,y+h),(0,255,0),2)
+#            global mask 
+#            mask = cv2.rectangle(imgContour,(x,y),(x+w,y+h),(0,255,0),2)
+            #cv2.putText(imgContour,objectType,(x+(w//2)-10,y+(h//2)-10),cv2.FONT_HERSHEY_COMPLEX,0.7,(0,0,0),2)
  
 
 
@@ -84,60 +82,228 @@ def getContours(img):
  
 #
 plt.rcParams['figure.figsize'] = 10, 10
+plt.rcParams.update({'figure.max_open_warning': 5})
 
 
-img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-img_HSV = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2HSV)
-#lower = np.array([0,68,5])
-#upper = np.array([179,255,255])
-#mask = cv2.inRange(imgHSV,lower,upper)
-#imgResult = cv2.bitwise_and(img,img,mask=mask)
-#img_HSV = imgResult
-plt.imshow(img_HSV)
-plt.show()
-img_thresh_low = cv2.inRange(img_HSV, np.array([0, 68, 5]), np.array([15, 255, 255])) #всё что входит в "левый красный"
-img_thresh_high = cv2.inRange(img_HSV, np.array([159, 135, 135]), np.array([255, 255, 255])) #всё что входит в "правый красный"
-
-img_thresh = cv2.bitwise_or(img_thresh_low, img_thresh_high)
-plt.imshow(img_thresh)
-plt.show()
-f, axarr = plt.subplots(nrows=1, ncols=2)
-axarr[0].imshow(img_thresh_low)
-axarr[1].imshow(img_thresh_high)
-
-kernel = np.ones((5, 5))
-img_thresh_opened = cv2.morphologyEx(img_thresh_low, cv2.MORPH_OPEN, kernel)
-img_thresh_blurred = cv2.medianBlur(img_thresh_opened, 5)
-imgCanny = cv2.Canny(img_thresh_blurred, 80, 160)
 
 #imgContour = imgCanny.copy()
 
+#0 24 43 255 0 255
+#cv2.namedWindow("TrackBars")
+#cv2.resizeWindow("TrackBars",640,240)
+#cv2.createTrackbar("Hue Min","TrackBars",0,179,empty)
+#cv2.createTrackbar("Hue Max","TrackBars",24,179,empty)
+#cv2.createTrackbar("Sat Min","TrackBars",43,255,empty)
+#cv2.createTrackbar("Sat Max","TrackBars",255,255,empty)
+#cv2.createTrackbar("Val Min","TrackBars",0,255,empty)
+#cv2.createTrackbar("Val Max","TrackBars",255,255,empty)
 
 
-# params for ShiTomasi corner detection
-feature_params = dict( maxCorners = 100,
-                       qualityLevel = 0.3,
-                       minDistance = 7,
-                       blockSize = 7 )
-# Parameters for lucas kanade optical flow
-lk_params = dict( winSize  = (15,15),
-                  maxLevel = 2,
-                  criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
-# Create some random colors
-color = np.random.randint(0,255,(100,3))
-# Take first frame and find corners in it
+cap = cv2.VideoCapture('cones2.mp4')
 ret, old_frame = cap.read()
-old_gray = cv2.cvtColor(old_frame, cv2.COLOR_BGR2GRAY)
-p0 = cv2.goodFeaturesToTrack(old_gray, mask = None, **feature_params)
-# Create a mask image for drawing purposes
 mask = np.zeros_like(old_frame)
-while(1):
-    ret,frame = cap.read()
-    frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+imgContour =np.zeros_like(old_frame)
+while(cap.isOpened()):
+    ret, framer = cap.read()
+    try:
+        frame = framer.copy()
+        anotherframe = framer.copy()
+    except:
+        break
+    #gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    img_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    img_HSV = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2HSV)
+    #lower = np.array([0,68,5])
+    #upper = np.array([179,255,255])
+    #mask = cv2.inRange(imgHSV,lower,upper)
+    #imgResult = cv2.bitwise_and(img,img,mask=mask)
+    #img_HSV = imgResult
+    #
+    ##plt.imshow(img_HSV)
+    ##plt.show()
+    #
 
-getContours(imgCanny)
-cv2.imshow('result',imgContour)
+ 
 
+    #h_min = cv2.getTrackbarPos("Hue Min","TrackBars")
+    #h_max = cv2.getTrackbarPos("Hue Max", "TrackBars")
+    #s_min = cv2.getTrackbarPos("Sat Min", "TrackBars")
+    #s_max = cv2.getTrackbarPos("Sat Max", "TrackBars")
+    #v_min = cv2.getTrackbarPos("Val Min", "TrackBars")
+    #v_max = cv2.getTrackbarPos("Val Max", "TrackBars")
+    #print(h_min,h_max,s_min,s_max,v_min,v_max)
+    #lower = np.array([h_min,s_min,v_min])
+    #upper = np.array([h_max,s_max,v_max])
+    #mask = cv2.inRange(imgHSV,lower,upper)
+    #imgResult = cv2.bitwise_and(img,img,mask=mask)
+
+
+    lower = np.array([0,73,99])
+    upper = np.array([46,255,255])
+    img_thresh_low = cv2.inRange(img_HSV, np.array([0,73,99]), np.array([46,255,255])) #всё что входит в "левый красный"
+    img_thresh_high = cv2.inRange(img_HSV, np.array([0, 75, 137]), np.array([184, 255, 255])) #всё что входит в "правый красный"
+
+    img_thresh = cv2.bitwise_or(img_thresh_low, img_thresh_high)
+    #
+    ##plt.imshow(img_thresh)
+    ##plt.show()
+    #
+    #f, axarr = plt.subplots(nrows=1, ncols=2)
+
+    #axarr[0].imshow(img_thresh_low)
+    #axarr[1].imshow(img_thresh_high)
+    
+#0 10 43 255 71 255
+
+
+    
+
+
+    kernel = np.ones((5, 5))
+    img_thresh_opened = cv2.morphologyEx(img_thresh, cv2.MORPH_OPEN, kernel)
+    img_thresh_blurred = cv2.medianBlur(img_thresh_opened, 5)
+    img_edges = cv2.Canny(img_thresh_blurred, 80, 160)
+    contours, _= cv2.findContours(np.array(img_edges), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    img_contours = np.zeros_like(img_edges)
+    cv2.drawContours(img_contours, contours, -1, (255,255,255), 2)
+    approx_contours = []
+    for c in contours:
+        approx = cv2.approxPolyDP(c, 10, closed = True)
+        approx_contours.append(approx)
+    img_approx_contours = np.zeros_like(img_edges)
+    cv2.drawContours(img_approx_contours, approx_contours, -1, (255,255,255), 1)
+    all_convex_hulls = []
+    for ac in approx_contours:
+        all_convex_hulls.append(cv2.convexHull(ac))
+    img_all_convex_hulls = np.zeros_like(img_edges)
+    cv2.drawContours(img_all_convex_hulls, all_convex_hulls, -1, (255,255,255), 2)
+    convex_hulls_3to10 = []
+    for ch in all_convex_hulls:
+        if 3 <= len(ch) <= 10:
+            convex_hulls_3to10.append(cv2.convexHull(ch))
+
+    img_convex_hulls_3to10 = np.zeros_like(img_edges)
+    cv2.drawContours(img_convex_hulls_3to10, convex_hulls_3to10, -1, (255,255,255), 2)
+    approx_contours = []
+    contours, _= cv2.findContours(np.array(img_edges), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    for c in contours:
+        approx = cv2.approxPolyDP(c, 10, closed = True)
+        approx_contours.append(approx)
+    img_all_convex_hulls = np.zeros_like(img_edges)
+    cv2.drawContours(img_all_convex_hulls, all_convex_hulls, -1, (255,255,255), 2)
+    convex_hulls_3to10 = []
+    for ch in all_convex_hulls:
+        if 3 <= len(ch) <= 10:
+            convex_hulls_3to10.append(cv2.convexHull(ch))
+
+    img_convex_hulls_3to10 = np.zeros_like(img_edges)
+    cv2.drawContours(img_convex_hulls_3to10, convex_hulls_3to10, -1, (255,255,255), 2)
+    def convex_hull_pointing_up(ch):
+        #Определяет, направлен ли контур наверх.
+        #Если да, то это конус
+        
+        # точки контура выше центра и ниже 
+        points_above_center, points_below_center = [], []
+    
+        x, y, w, h = cv2.boundingRect(ch) # координаты левого верхнего угла описывающего прямоугольника, ширина и высота
+        aspect_ratio = w / h # отношение ширины прямоугольника к высоте
+
+        # если прямоугольник узкий, продолжаем определение. Если нет, то контур не подходит
+        if aspect_ratio < 0.8:
+            # каждую точку контура классифицируем как лежащую выше или ниже центра
+            vertical_center = y + h / 2
+
+            for point in ch:
+                if point[0][1] < vertical_center: # если координата y точки выше центра, то добавляем эту точку в список точек выше центра
+                    points_above_center.append(point)
+                elif point[0][1] >= vertical_center:
+                    points_below_center.append(point)
+
+            # определяем координаты x крайних точек, лежащих ниже центра
+            left_x = points_below_center[0][0][0]
+            right_x = points_below_center[0][0][0]
+            for point in points_below_center:
+                if point[0][0] < left_x:
+                    left_x = point[0][0]
+                if point[0][0] > right_x:
+                    right_x = point[0][0]
+
+            # проверяем, лежат ли верхние точки контура вне "основания". Если да, то контур не подходит
+            for point in points_above_center:
+                if (point[0][0] < left_x) or (point[0][0] > right_x):
+                    return False
+        else:
+            return False
+        
+        return True
+
+    # определяем, является ли контур конусом. Если да, то сохраняем и строим для него описывающий прямоугольник
+    cones = []
+    bounding_rects = []
+    for ch in convex_hulls_3to10:
+        if convex_hull_pointing_up(ch):
+            cones.append(ch)
+            rect = cv2.boundingRect(ch)
+            bounding_rects.append(rect)
+
+    img_cones = np.zeros_like(img_edges)
+    cv2.drawContours(img_cones, cones, -1, (255,255,255), 2)
+    for rect in bounding_rects:
+        cv2.rectangle(anotherframe, (rect[0], rect[1]), (rect[0]+rect[2], rect[1]+rect[3]), (0, 0, 255), 3)
+    #cv2.imshow('anotherframe',anotherframe)
+
+
+    #masker = cv2.inRange(img_edges,lower,upper)
+    imgConesOnly = cv2.bitwise_and(framer,framer,mask=img_edges)
+    imgCanny = cv2.Canny(img_convex_hulls_3to10, 80, 160)
+    #imgCanny = cv2.Canny(masker, 80, 160)
+
+
+    contours,hierarchy = cv2.findContours(imgCanny,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
+    for cnt in contours:
+        area = cv2.contourArea(cnt)
+        print(area)
+        if area>100:
+            #cv2.drawContours(imgContour, cnt, -1, (255, 0, 0), 3)
+            peri = cv2.arcLength(cnt,True)
+            approx = cv2.approxPolyDP(cnt,0.02*peri,True)
+            x, y, w, h = cv2.boundingRect(approx)
+            mask = cv2.rectangle(imgContour,(x,y),(x+w,y+h),(0,255,0),2)
+    
+    shot = cv2.add(anotherframe,mask)
+    cv2.imshow('frame',shot)
+    print(plt.get_fignums())
+    imgContour =np.zeros_like(old_frame)
+    mask=np.zeros_like(old_frame)
+
+    #cv2.imshow('test',imgConesOnly)
+    key = cv2.waitKey(1)
+    if key == ord('p'):
+        cv2.waitKey(-1)
+    #plt.cla()
+    #cv2.imshow('frame',imgCanny)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
+
+#while(1):
+    #ret,frame = cap.read()
+    #framegray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    #imger = cv2.add(frame,masking)
+    #cv2.imshow('frame',imger)
+
+
+    #frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    #mask = cv.line(mask, (a,b),(c,d), color[i].tolist(), 2)
+    #img = cv.add(frame,mask)
+    #img = cv2.add(frame)
+    #ret, old_frame = cap.read()
+
+
+#getContours(imgCanny)
+#cv2.imshow('result',imgContour)
 
 
 
@@ -177,7 +343,7 @@ cv2.imshow('result',imgContour)
 #imgCanny = cv2.Canny(imgBlur,50,50)
 #getContours(imgCanny)
  
-imgBlank = np.zeros_like(img)
+#imgBlank = np.zeros_like(img)
 #imgStack = stackImager(0.8,([imgclear],[imgContour]))
 
 
